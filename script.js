@@ -1,12 +1,13 @@
 var zIndex = 1;
 var mouseX = 0;
 var mouseY = 0;
-var fontSize = 30;
 var shiftedX = 0; //STAGE SHIFT AMOUNT
 var shiftedY = 0;
 var color = "#000000";
-// let canvas = document.getElementById("spaceCanvas");
-// let ctx = canvas.getContext("2d");
+size = 30;
+
+document.getElementById("size").value = size;
+
 var canvas = document.createElement("canvas");
 var ctx = canvas.getContext("2d");
 
@@ -16,31 +17,59 @@ var stage = new Konva.Stage({
 	height: window.innerHeight,
 	draggable: true,
 });
-// stage.on("click", function (e) {
-// 	// e.target is a clicked Konva.Shape or current stage if you clicked on empty space
-// 	console.log("clicked on", e.target);
-// });
 
-var group = new Konva.Group({
-	x: 120,
-	y: 40,
-	rotation: 20,
+var clicked = null;
+
+stage.on("click", function (e) {
+	// e.target is a clicked Konva.Shape or current stage if you clicked on empty space
+	clicked = e.target;
+	// console.log("clicked on", e.target);
+	if (e.target.parent != null) {
+		tr.nodes([e.target]);
+	}
 });
+
+// var group = new Konva.Group({});
 
 // then create layer
 var layer = new Konva.Layer();
-layer.add(group);
+// layer.add(group);
 stage.add(layer);
+var tr = new Konva.Transformer();
+layer.add(tr);
+
 shiftedX = stage.getX();
 shiftedY = stage.getY();
 
 var isPaint = false;
 var mode = "brush";
 var lastLine;
-
+var actionHistory = [];
+var control = false;
 stage.on("dragmove", (e) => {
 	if (isPaint) {
 		stage.stopDrag();
+	}
+});
+
+window.addEventListener("keydown", (e) => {
+	if (e.key == "Delete") {
+		var s = clicked.remove();
+		tr.nodes([]);
+	}
+	if (e.key == "Control") {
+		control = true;
+	}
+	if (e.key == "z" && control) {
+		var pop = actionHistory.pop();
+		pop.remove();
+		tr.nodes([]);
+	}
+});
+
+window.addEventListener("keyup", (e) => {
+	if (e.key == "Control") {
+		control = false;
 	}
 });
 
@@ -69,9 +98,8 @@ window.addEventListener("paste", (e) => {
 				layer.add(img2);
 				img.style.width = width + "px";
 				img.style.height = height + "px";
-				var tr = new Konva.Transformer();
-				layer.add(tr);
 				tr.nodes([img2]);
+				actionHistory.push(img2);
 			};
 			img.src = event.target.result;
 			// console.log(`w X: ${mouseX}, w Y: ${mouseY}`);
@@ -83,17 +111,18 @@ window.addEventListener("paste", (e) => {
 			.then((text) => {
 				var text = new Konva.Text({
 					x: mouseX - shiftedX - ctx.measureText(text).width,
-					y: mouseY - shiftedY - fontSize,
+					y: mouseY - shiftedY - size,
 					text: text,
-					fontSize: fontSize,
+					fontSize: size,
 					fontFamily: "Calibri",
 					fill: color,
 					draggable: true,
 				});
 				layer.add(text);
-				var tr = new Konva.Transformer();
-				layer.add(tr);
+				// var tr = new Konva.Transformer();
+				// layer.add(tr);
 				tr.nodes([text]);
+				actionHistory.push(text);
 			})
 			.catch((err) => {
 				console.error("Failed to read clipboard contents: ", err);
@@ -135,7 +164,7 @@ stage.on("mousedown touchstart", function (e) {
 		pos.y = pos.y - shiftedY;
 		lastLine = new Konva.Line({
 			stroke: color,
-			strokeWidth: 5,
+			strokeWidth: size,
 			globalCompositeOperation:
 				mode === "brush" || mode === "line"
 					? "source-over"
@@ -175,6 +204,7 @@ stage.on("mouseup touchend", function () {
 		var newPoints = lastLine.points().concat([pos.x, pos.y]);
 		lastLine.points(newPoints);
 	}
+	actionHistory.push(lastLine);
 });
 
 // and core function - drawing
@@ -200,4 +230,39 @@ select.addEventListener("change", function () {
 
 document.getElementById("color").addEventListener("input", (e) => {
 	color = document.getElementById("color").value;
+});
+
+document.getElementById("size").addEventListener("input", (e) => {
+	size = document.getElementById("size").value;
+});
+
+var scaleBy = 1.1;
+stage.on("wheel", (e) => {
+	e.evt.preventDefault();
+	var oldScale = stage.scaleX();
+
+	var center = {
+		x: stage.width() / 2,
+		y: stage.height() / 2,
+	};
+
+	var relatedTo = {
+		x: (center.x - stage.x()) / oldScale,
+		y: (center.y - stage.y()) / oldScale,
+	};
+
+	var newScale = e.evt.deltaY < 0 ? oldScale * scaleBy : oldScale / scaleBy;
+
+	stage.scale({
+		x: newScale,
+		y: newScale,
+	});
+
+	var newPos = {
+		x: center.x - relatedTo.x * newScale,
+		y: center.y - relatedTo.y * newScale,
+	};
+
+	stage.position(newPos);
+	stage.batchDraw();
 });

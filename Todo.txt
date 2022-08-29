@@ -1,6 +1,4 @@
-panning +
+Zoom on mouse 
 drawing lines and normally + improvable 
-selecting +
 putting one into onother and pop 
-Change font size 
 HTML animation bak 
