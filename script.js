@@ -1,8 +1,4 @@
 var zIndex = 1;
-var mouseX = 0;
-var mouseY = 0;
-var shiftedX = 0; //STAGE SHIFT AMOUNT
-var shiftedY = 0;
 var color = "#000000";
 size = 30;
 
@@ -37,9 +33,6 @@ var layer = new Konva.Layer();
 stage.add(layer);
 var tr = new Konva.Transformer();
 layer.add(tr);
-
-shiftedX = stage.getX();
-shiftedY = stage.getY();
 
 var isPaint = false;
 var mode = "brush";
@@ -77,6 +70,7 @@ window.addEventListener("paste", (e) => {
 	var items = (e.clipboardData || e.originalEvent.clipboardData).items;
 
 	var item = items[0];
+
 	if (item.kind === "file") {
 		var blob = item.getAsFile();
 		var reader = new FileReader();
@@ -88,8 +82,8 @@ window.addEventListener("paste", (e) => {
 				const height = img.height;
 
 				var img2 = new Konva.Image({
-					x: mouseX - shiftedX,
-					y: mouseY - shiftedY,
+					x: stage.getRelativePointerPosition().x,
+					y: stage.getRelativePointerPosition().y,
 					image: img,
 					width: width,
 					height: height,
@@ -102,7 +96,6 @@ window.addEventListener("paste", (e) => {
 				actionHistory.push(img2);
 			};
 			img.src = event.target.result;
-			// console.log(`w X: ${mouseX}, w Y: ${mouseY}`);
 		};
 		reader.readAsDataURL(blob);
 	} else if (item.kind == "string") {
@@ -110,8 +103,10 @@ window.addEventListener("paste", (e) => {
 			.readText()
 			.then((text) => {
 				var text = new Konva.Text({
-					x: mouseX - shiftedX - ctx.measureText(text).width,
-					y: mouseY - shiftedY - size,
+					x:
+						stage.getRelativePointerPosition().x -
+						ctx.measureText(text).width,
+					y: stage.getRelativePointerPosition().y - size,
 					text: text,
 					fontSize: size,
 					fontFamily: "Calibri",
@@ -135,18 +130,6 @@ function drawText(text, x, y, size, font) {
 	ctx.fillText(text, x, y);
 }
 
-stage.on("mousemove", () => {
-	mouseX = stage.getPointerPosition().x;
-	mouseY = stage.getPointerPosition().y;
-	// console.log("dragged:" + mouseX + "," + mouseY);
-});
-
-stage.on("dragend", () => {
-	shiftedX = stage.getAbsolutePosition().x;
-	shiftedY = stage.getAbsolutePosition().y;
-	// console.log("dragged:" + shiftedX + "," + shiftedY);
-});
-
 function getStage() {
 	return stage;
 }
@@ -159,9 +142,9 @@ stage.on("mousedown touchstart", function (e) {
 	if (mode === "brush" || mode == "line" || mode === "eraser") {
 		stage.stopDrag();
 		isPaint = true;
-		var pos = stage.getPointerPosition();
-		pos.x = pos.x - shiftedX;
-		pos.y = pos.y - shiftedY;
+		var pos = {};
+		pos.x = stage.getRelativePointerPosition().x;
+		pos.y = stage.getRelativePointerPosition().y;
 		lastLine = new Konva.Line({
 			stroke: color,
 			strokeWidth: size,
@@ -179,9 +162,9 @@ stage.on("mousedown touchstart", function (e) {
 	} else if (mode == "line") {
 		stage.stopDrag();
 		isPaint = true;
-		var pos = stage.getPointerPosition();
-		pos.x = pos.x - shiftedX;
-		pos.y = pos.y - shiftedY;
+		var pos = {};
+		pos.x = stage.getRelativePointerPosition().x;
+		pos.y = stage.getRelativePointerPosition().y;
 		lastLine = new Konva.Line({
 			stroke: color,
 			strokeWidth: 5,
@@ -198,9 +181,9 @@ stage.on("mousedown touchstart", function (e) {
 stage.on("mouseup touchend", function () {
 	isPaint = false;
 	if (mode === "line") {
-		const pos = stage.getPointerPosition();
-		pos.x = pos.x - shiftedX;
-		pos.y = pos.y - shiftedY;
+		var pos = {};
+		pos.x = stage.getRelativePointerPosition().x;
+		pos.y = stage.getRelativePointerPosition().y;
 		var newPoints = lastLine.points().concat([pos.x, pos.y]);
 		lastLine.points(newPoints);
 	}
@@ -216,9 +199,9 @@ stage.on("mousemove touchmove", function (e) {
 	// prevent scrolling on touch devices
 	e.evt.preventDefault();
 
-	const pos = stage.getPointerPosition();
-	pos.x = pos.x - shiftedX;
-	pos.y = pos.y - shiftedY;
+	var pos = {};
+	pos.x = stage.getRelativePointerPosition().x;
+	pos.y = stage.getRelativePointerPosition().y;
 	var newPoints = lastLine.points().concat([pos.x, pos.y]);
 	lastLine.points(newPoints);
 });
@@ -238,31 +221,82 @@ document.getElementById("size").addEventListener("input", (e) => {
 
 var scaleBy = 1.1;
 stage.on("wheel", (e) => {
+	// stop default scrolling
 	e.evt.preventDefault();
+
 	var oldScale = stage.scaleX();
+	var pointer = stage.getPointerPosition();
 
-	var center = {
-		x: stage.width() / 2,
-		y: stage.height() / 2,
+	var mousePointTo = {
+		x: (pointer.x - stage.x()) / oldScale,
+		y: (pointer.y - stage.y()) / oldScale,
 	};
 
-	var relatedTo = {
-		x: (center.x - stage.x()) / oldScale,
-		y: (center.y - stage.y()) / oldScale,
-	};
+	// how to scale? Zoom in? Or zoom out?
+	let direction = e.evt.deltaY < 0 ? 1 : -1;
 
-	var newScale = e.evt.deltaY < 0 ? oldScale * scaleBy : oldScale / scaleBy;
+	var newScale = direction > 0 ? oldScale * scaleBy : oldScale / scaleBy;
 
-	stage.scale({
-		x: newScale,
-		y: newScale,
-	});
+	stage.scale({ x: newScale, y: newScale });
 
 	var newPos = {
-		x: center.x - relatedTo.x * newScale,
-		y: center.y - relatedTo.y * newScale,
+		x: pointer.x - mousePointTo.x * newScale,
+		y: pointer.y - mousePointTo.y * newScale,
 	};
-
 	stage.position(newPos);
-	stage.batchDraw();
 });
+// stage.on("wheel", (e) => {
+// 	e.evt.preventDefault();
+// 	var oldScale = stage.scaleX();
+// 	// var mousePos = getCalculatedMousePosition();
+// 	// var center = {
+// 	// 	x: mousePos.x,
+// 	// 	y: mousePos.y,
+// 	// };
+
+// 	// var center = {
+// 	// 	x: stage.width() / 2,
+// 	// 	y: stage.height() / 2,
+// 	// };
+
+// 	// var relatedTo = {
+// 	// 	x: (center.x - stage.x()) / oldScale,
+// 	// 	y: (center.y - stage.y()) / oldScale,
+// 	// };
+
+// 	var newScale = e.evt.deltaY < 0 ? oldScale * scaleBy : oldScale / scaleBy;
+
+// 	stage.scale({
+// 		x: newScale,
+// 		y: newScale,
+// 	});
+// 	var pos = stage.getRelativePointerPosition();
+
+// 	// var newPos = {
+// 	// 	x: pos.X,
+// 	// 	y: pos.y,
+// 	// };
+
+// 	stage.position(newPos);
+// 	stage.batchDraw();
+// });
+
+// function from https://stackoverflow.com/a/15832662/512042
+function downloadURI(uri, name) {
+	var link = document.createElement("a");
+	link.download = name;
+	link.href = uri;
+	document.body.appendChild(link);
+	link.click();
+	document.body.removeChild(link);
+	delete link;
+}
+
+document.getElementById("save").addEventListener(
+	"click",
+	function () {
+		var dataURL = stage.toDataURL({ pixelRatio: 3 });
+		downloadURI(dataURL, "stage.png");
+	},
+	false
+);

@@ -1,4 +1,2 @@
-Zoom on mouse 
 drawing lines and normally + improvable 
 putting one into onother and pop 
-HTML animation bak 
