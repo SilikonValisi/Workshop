@@ -14,6 +14,12 @@
 		></script>
 		<script src="https://unpkg.com/panzoom@9.4.0/dist/panzoom.min.js"></script> -->
 		<script src="https://unpkg.com/konva@8/konva.min.js"></script>
+		<script
+			src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.0/FileSaver.min.js"
+			integrity="sha512-csNcFYJniKjJxRWRV1R7fvnXrycHP6qDR21mgz1ZP55xY5d+aHLfo9/FcGDQLfn2IfngbAHd8LdfsagcCqgTcQ=="
+			crossorigin="anonymous"
+			referrerpolicy="no-referrer"
+		></script>
 
 		<meta charset="UTF-8" />
 
@@ -25,14 +31,22 @@
 			<select id="tool">
 				<option value="pointer">Pointer</option>
 				<option value="brush">Brush</option>
-				<option value="eraser">Eraser</option>
+				<!-- <option value="eraser">Eraser</option> -->
 				<option value="line">Line</option>
 			</select>
 			Color:
 			<input id="color" type="color" />
 			Size:
-			<input id="size" type="text" />
+			<input id="size" type="text" value="30" />
 			<button id="save">Save</button>
+			<label for="workshop">Choose saved Workshop</label>
+
+			<input
+				type="file"
+				name="workshop"
+				id="stageJsonFile"
+				accept=".json"
+			/>
 		</div>
 		<div id="space"></div>
 	</body>
