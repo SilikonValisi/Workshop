@@ -215,18 +215,27 @@ function start(stageJSON) {
 
 	// and core function - drawing
 	stage.on("mousemove touchmove", function (e) {
-		if (!isPaint || mode === "line") {
-			return;
-		}
-
-		// prevent scrolling on touch devices
 		e.evt.preventDefault();
 
-		var pos = {};
-		pos.x = stage.getRelativePointerPosition().x;
-		pos.y = stage.getRelativePointerPosition().y;
-		var newPoints = lastLine.points().concat([pos.x, pos.y]);
-		lastLine.points(newPoints);
+		if (!isPaint) {
+			return;
+		}
+		if (mode == "line") {
+			lastLine.points().pop();
+			lastLine.points().pop();
+			var pos = {};
+			pos.x = stage.getRelativePointerPosition().x;
+			pos.y = stage.getRelativePointerPosition().y;
+			var newPoints = lastLine.points().concat([pos.x, pos.y]);
+			lastLine.points(newPoints);
+		} else {
+			var pos = {};
+			pos.x = stage.getRelativePointerPosition().x;
+			pos.y = stage.getRelativePointerPosition().y;
+			var newPoints = lastLine.points().concat([pos.x, pos.y]);
+			lastLine.points(newPoints);
+		}
+		// prevent scrolling on touch devices
 	});
 
 	var select = document.getElementById("tool");
