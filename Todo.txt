@@ -1,2 +1,9 @@
-drawing lines improve 
+save as image
+Add images to save files
+Write by just clicking
+Action history size limit
+Text appeared in the wrong place 
 putting one into onother and pop 
+Erasing for SOLT 
+
+remove duplicate image names 
