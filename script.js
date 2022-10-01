@@ -1,5 +1,9 @@
 var obj = null;
-console.log("WTF");
+var stage;
+var layer;
+var clicked = null;
+var zIndex = 1;
+var background;
 function onChange(event) {
 	var reader = new FileReader();
 	reader.onload = onReaderLoad;
@@ -22,7 +26,6 @@ function start(stageJSON) {
 	var canvas = document.createElement("canvas");
 	var ctx = canvas.getContext("2d");
 
-	var stage;
 	if (stageJSON == null) {
 		stage = new Konva.Stage({
 			container: "space", // id of container <div>
@@ -34,12 +37,9 @@ function start(stageJSON) {
 		stage = Konva.Node.create(stageJSON, "space");
 	}
 
-	var zIndex = 1;
 	var color = "#000000";
 	size = 30;
 	var isPaint = false;
-
-	var clicked = null;
 
 	stage.on("click", function (e) {
 		// e.target is a clicked Konva.Shape or current stage if you clicked on empty space
@@ -47,13 +47,15 @@ function start(stageJSON) {
 		// console.log("clicked on", e.target);
 		if (e.target.parent != null) {
 			tr.nodes([e.target]);
+			zIndex++;
+			clicked.setZIndex(zIndex);
 		}
 	});
 
 	// var group = new Konva.Group({});
 
 	// then create layer
-	var layer = new Konva.Layer();
+	layer = new Konva.Layer();
 	// layer.add(group);
 	stage.add(layer);
 	var tr = new Konva.Transformer();
@@ -112,6 +114,7 @@ function start(stageJSON) {
 						image: img,
 						width: width,
 						height: height,
+						name: "image",
 						draggable: true,
 					});
 					layer.add(img2);
@@ -211,6 +214,7 @@ function start(stageJSON) {
 			lastLine.points(newPoints);
 		}
 		actionHistory.push(lastLine);
+		// console.log(stage.getPosition().x + "," + stage.getPosition().y);
 	});
 
 	// and core function - drawing
@@ -276,6 +280,10 @@ function start(stageJSON) {
 			y: pointer.y - mousePointTo.y * newScale,
 		};
 		stage.position(newPos);
+		// console.log(
+		// 	"pos:" + stage.getPosition().x + "," + stage.getPosition().y
+		// );
+		// console.log("scale:" + stage.width() + "," + stage.height());
 	});
 
 	var s = true;
@@ -286,7 +294,54 @@ function start(stageJSON) {
 				type: "text/plain;charset=utf-8",
 			});
 			saveAs(blob, "workshop.json");
+			var s = stage.find(".image");
+			for (i = 0; i < s.length; i++) {
+				var imageDownload = s[i].image();
+				ctx.drawImage(imageDownload, 0, 0);
+				canvas.toBlob(function (blob) {
+					saveAs(
+						blob,
+						imageDownload.src.split(",")[1].slice(0, 12) + ".png"
+					);
+				});
+			}
 		},
 		false
 	);
+
+	function downloadURI(uri, name) {
+		var link = document.createElement("a");
+		link.download = name;
+		link.href = uri;
+		document.body.appendChild(link);
+		link.click();
+		document.body.removeChild(link);
+		delete link;
+	}
+
+	document.getElementById("saveImage").addEventListener(
+		"click",
+		function () {
+			if (background != null) background.destroy();
+
+			background = createBackgroundRect();
+			layer.add(background);
+			background.setZIndex(0);
+			var dataURL = stage.toDataURL({ pixelRatio: 3 });
+			downloadURI(dataURL, "stage.png");
+		},
+		false
+	);
+}
+
+function createBackgroundRect() {
+	var rect1 = new Konva.Rect({
+		x: -stage.getPosition().x / stage.getScale().x,
+		y: -stage.getPosition().y / stage.getScale().y,
+		width: stage.width() / stage.scale().x,
+		height: stage.height() / stage.scale().y,
+		fill: "white",
+		zIndex: 0,
+	});
+	return rect1;
 }
