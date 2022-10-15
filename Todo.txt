@@ -1,6 +1,14 @@
+Add text by clicking 
+text new line
 Action history size limit
 Text appeared in the wrong place 
 putting one into onother and pop 
 Erasing for SOLT 
 
 remove duplicate image names 
+
+
+NOTES:
+alt = text 
+shift = drawing 
+
