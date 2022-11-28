@@ -1,4 +1,4 @@
-Add text by clicking 
+alter sizes between text node and text area 
 text new line
 Action history size limit
 Text appeared in the wrong place 
@@ -8,7 +8,7 @@ Erasing for SOLT
 remove duplicate image names 
 
 
-NOTES:
+NOTES: maybe change to change mode with keys 
 alt = text 
-shift = drawing 
+shift = line 
 

@@ -4,17 +4,48 @@ var layer;
 var clicked = null;
 var zIndex = 1;
 var background;
-var textarea = document.createElement("textarea");
 var defaultTextPx = "50px";
 var defaultWidth = 300;
 var defaultHeight = 75;
 
+var mode = "pointer";
 var control = false;
 var shift = false;
 var alt = false;
 var test;
 var tr = new Konva.Transformer();
+window.addEventListener("keydown", (e) => {
+	if (e.key == "Delete") {
+		clicked.destroy();
+		tr.nodes([]);
+	}
+	if (e.key == "Control") {
+		control = true;
+	}
+	if (e.key == "z" && control) {
+		var pop = actionHistory.pop();
+		pop.remove();
+		tr.nodes([]);
+	}
+	// if (e.key == "Shift") {
+	// 	shift = true;
+	// }
+	// if (e.key == "Alt") {
+	// 	alt = true;
+	// }
+});
 
+// window.addEventListener("keyup", (e) => {
+// 	if (e.key == "Control") {
+// 		control = false;
+// 	}
+// 	if (e.key == "Shift") {
+// 		shift = false;
+// 	}
+// 	if (e.key == "Alt") {
+// 		alt = false;
+// 	}
+// });
 function onChange(event) {
 	var reader = new FileReader();
 	reader.onload = onReaderLoad;
@@ -39,26 +70,27 @@ var textUpdate = function (eventElement) {
 		y: stage.container().offsetTop + textPosition.y,
 	};
 
+	var textarea = document.createElement("textarea");
 	document.body.appendChild(textarea);
 
 	textarea.value = textNode.text();
 	textarea.style.position = "absolute";
 	textarea.style.top = areaPosition.y + "px";
 	textarea.style.left = areaPosition.x + "px";
-	textarea.style.width = textNode.width() - textNode.padding() * 2 + "px";
-	if (textarea.style.width == "0px") {
-		textarea.style.width = defaultTextPx;
-	}
-	textarea.style.height =
-		textNode.height() - textNode.padding() * 2 + 5 + "px";
+	// textarea.style.width = textNode.width() - textNode.padding() * 2 + "px";
+	// if (textarea.style.width == "0px") {
+	// 	textarea.style.width = defaultTextPx;
+	// }
+	// textarea.style.height =
+	// 	textNode.height() - textNode.padding() * 2 + 5 + "px";
 	textarea.style.fontSize = textNode.fontSize() + "px";
 	textarea.style.border = "none";
 	textarea.style.padding = "0px";
 	textarea.style.margin = "0px";
 	textarea.style.overflow = "hidden";
 	textarea.style.background = "none";
-	textarea.style.outline = "none";
-	textarea.style.resize = "none";
+	// textarea.style.outline = "none";
+	// textarea.style.resize = "none";
 	textarea.style.lineHeight = textNode.lineHeight();
 	textarea.style.fontFamily = textNode.fontFamily();
 	textarea.style.transformOrigin = "left top";
@@ -79,8 +111,8 @@ var textUpdate = function (eventElement) {
 
 	textarea.style.transform = transform;
 
-	textarea.style.height = "auto";
-	textarea.style.height = textarea.scrollHeight + 3 + "px";
+	// textarea.style.height = "auto";
+	// textarea.style.height = textarea.scrollHeight + 3 + "px";
 
 	textarea.focus();
 
@@ -111,7 +143,7 @@ var textUpdate = function (eventElement) {
 		if (isEdge) {
 			newWidth += 1;
 		}
-		textarea.style.width = newWidth + "px";
+		// textarea.style.width = newWidth + "px";
 	}
 
 	textarea.addEventListener("keydown", function (e) {
@@ -130,14 +162,15 @@ var textUpdate = function (eventElement) {
 	textarea.addEventListener("keydown", function (e) {
 		scale = textNode.getAbsoluteScale().x;
 		setTextareaWidth(textNode.width() * scale);
-		textarea.style.height = "auto";
-		textarea.style.height =
-			textarea.scrollHeight + textNode.fontSize() + "px";
+		// textarea.style.height = "auto";
+		// textarea.style.height =
+		// 	textarea.scrollHeight + textNode.fontSize() + "px";
 	});
 
 	function handleOutsideClick(e) {
 		if (e.target !== textarea) {
 			textNode.text(textarea.value);
+			// console.log("removing text area");
 			removeTextarea();
 		}
 	}
@@ -178,9 +211,9 @@ function start(stageJSON) {
 
 	stage.on("click", function (e) {
 		// e.target is a clicked Konva.Shape or current stage if you clicked on empty space
-		clicked = e.target;
-		// console.log("clicked on", e.target);
+
 		if (e.target.parent != null) {
+			clicked = e.target;
 			tr.nodes([e.target]);
 			zIndex++;
 			clicked.setZIndex(zIndex);
@@ -196,45 +229,11 @@ function start(stageJSON) {
 	layer.add(tr);
 
 	var isPaint = false;
-	var mode = "pointer";
 	var lastLine;
 	var actionHistory = [];
 	stage.on("dragmove", (e) => {
 		if (isPaint) {
 			stage.stopDrag();
-		}
-	});
-
-	window.addEventListener("keydown", (e) => {
-		if (e.key == "Delete") {
-			clicked.destroy();
-			tr.nodes([]);
-		}
-		if (e.key == "Control") {
-			control = true;
-		}
-		if (e.key == "z" && control) {
-			var pop = actionHistory.pop();
-			pop.remove();
-			tr.nodes([]);
-		}
-		if (e.key == "Shift") {
-			shift = true;
-		}
-		if (e.key == "Alt") {
-			alt = true;
-		}
-	});
-
-	window.addEventListener("keyup", (e) => {
-		if (e.key == "Control") {
-			control = false;
-		}
-		if (e.key == "Shift") {
-			shift = false;
-		}
-		if (e.key == "Alt") {
-			alt = false;
 		}
 	});
 
@@ -311,7 +310,7 @@ function start(stageJSON) {
 	}
 
 	stage.on("mousedown touchstart", function (e) {
-		if (mode === "brush" || shift || mode == "line") {
+		if (mode === "brush" || mode == "line") {
 			// || mode === "eraser"
 			stage.stopDrag();
 			isPaint = true;
@@ -330,7 +329,7 @@ function start(stageJSON) {
 				draggable: true,
 			});
 			layer.add(lastLine);
-		} else if (alt) {
+		} else if (mode == "text") {
 			// mode == "text"
 			defaultText = "";
 			var text = new Konva.Text({
@@ -356,7 +355,7 @@ function start(stageJSON) {
 
 	stage.on("mouseup touchend", function () {
 		isPaint = false;
-		if (shift || mode == "line") {
+		if (mode == "line") {
 			var pos = {};
 			pos.x = stage.getRelativePointerPosition().x;
 			pos.y = stage.getRelativePointerPosition().y;
@@ -374,7 +373,7 @@ function start(stageJSON) {
 		if (!isPaint) {
 			return;
 		}
-		if (shift || mode == "line") {
+		if (mode == "line") {
 			//mode == "line"
 			lastLine.points().pop();
 			lastLine.points().pop();
