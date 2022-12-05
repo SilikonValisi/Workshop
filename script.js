@@ -77,12 +77,12 @@ var textUpdate = function (eventElement) {
 	textarea.style.position = "absolute";
 	textarea.style.top = areaPosition.y + "px";
 	textarea.style.left = areaPosition.x + "px";
-	// textarea.style.width = textNode.width() - textNode.padding() * 2 + "px";
-	// if (textarea.style.width == "0px") {
-	// 	textarea.style.width = defaultTextPx;
-	// }
-	// textarea.style.height =
-	// 	textNode.height() - textNode.padding() * 2 + 5 + "px";
+	textarea.style.width = textNode.width() - textNode.padding() * 2 + "px";
+	if (textarea.style.width == "0px") {
+		textarea.style.width = defaultTextPx;
+	}
+	textarea.style.height =
+		textNode.height() - textNode.padding() * 2 + 5 + "px";
 	textarea.style.fontSize = textNode.fontSize() + "px";
 	textarea.style.border = "none";
 	textarea.style.padding = "0px";
@@ -111,8 +111,8 @@ var textUpdate = function (eventElement) {
 
 	textarea.style.transform = transform;
 
-	// textarea.style.height = "auto";
-	// textarea.style.height = textarea.scrollHeight + 3 + "px";
+	textarea.style.height = "auto";
+	textarea.style.height = textarea.scrollHeight + 3 + "px";
 
 	textarea.focus();
 
@@ -143,7 +143,7 @@ var textUpdate = function (eventElement) {
 		if (isEdge) {
 			newWidth += 1;
 		}
-		// textarea.style.width = newWidth + "px";
+		textarea.style.width = newWidth + "px";
 	}
 
 	textarea.addEventListener("keydown", function (e) {
@@ -162,9 +162,9 @@ var textUpdate = function (eventElement) {
 	textarea.addEventListener("keydown", function (e) {
 		scale = textNode.getAbsoluteScale().x;
 		setTextareaWidth(textNode.width() * scale);
-		// textarea.style.height = "auto";
-		// textarea.style.height =
-		// 	textarea.scrollHeight + textNode.fontSize() + "px";
+		textarea.style.height = "auto";
+		textarea.style.height =
+			textarea.scrollHeight + textNode.fontSize() + "px";
 	});
 
 	function handleOutsideClick(e) {
@@ -286,9 +286,22 @@ function start(stageJSON) {
 						fill: color,
 						draggable: true,
 					});
+					text.on("transform", function () {
+						// reset scale, so only with is changing by transformer
+						text.setAttrs({
+							width: text.width() * text.scaleX(),
+							scaleX: 1,
+						});
+					});
+
 					layer.add(text);
 					text.on("dblclick dbltap", textUpdate);
 					tr.nodes([text]);
+					tr.enabledAnchors(["middle-left", "middle-right"]);
+					tr.boundBoxFunc(function (oldBox, newBox) {
+						newBox.width = Math.max(30, newBox.width);
+						return newBox;
+					});
 					actionHistory.push(text);
 				})
 				.catch((err) => {
