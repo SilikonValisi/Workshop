@@ -1,5 +1,10 @@
+Text size 
+Clicking and writing text made easy 
+fix difference btwn clicking and pasting text 
+
+
 Action history size limit
-Text appeared in the wrong place 
+Text appeared in the wrong place ? 
 putting one into onother and pop 
 Erasing for SOLT 
 
