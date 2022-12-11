@@ -14,38 +14,30 @@ var shift = false;
 var alt = false;
 var test;
 var tr = new Konva.Transformer();
+var actionHistory = [];
+var textarea = document.createElement("textarea");
+
 window.addEventListener("keydown", (e) => {
 	if (e.key == "Delete") {
 		clicked.destroy();
 		tr.nodes([]);
 	}
 	if (e.key == "Control") {
-		control = true;
+		mode = "text";
 	}
-	if (e.key == "z" && control) {
-		var pop = actionHistory.pop();
-		pop.remove();
-		tr.nodes([]);
+	if (e.key == "Shift") {
+		mode = "line";
 	}
-	// if (e.key == "Shift") {
-	// 	shift = true;
-	// }
-	// if (e.key == "Alt") {
-	// 	alt = true;
-	// }
 });
 
-// window.addEventListener("keyup", (e) => {
-// 	if (e.key == "Control") {
-// 		control = false;
-// 	}
-// 	if (e.key == "Shift") {
-// 		shift = false;
-// 	}
-// 	if (e.key == "Alt") {
-// 		alt = false;
-// 	}
-// });
+window.addEventListener("keyup", (e) => {
+	if (e.key == "Control") {
+		mode = "pointer";
+	}
+	if (e.key == "Shift") {
+		mode = "pointer";
+	}
+});
 function onChange(event) {
 	var reader = new FileReader();
 	reader.onload = onReaderLoad;
@@ -70,7 +62,6 @@ var textUpdate = function (eventElement) {
 		y: stage.container().offsetTop + textPosition.y,
 	};
 
-	var textarea = document.createElement("textarea");
 	document.body.appendChild(textarea);
 
 	textarea.value = textNode.text();
@@ -169,7 +160,12 @@ var textUpdate = function (eventElement) {
 
 	function handleOutsideClick(e) {
 		if (e.target !== textarea) {
-			textNode.text(textarea.value);
+			if (textarea.value == "") {
+				textNode.destroy();
+			} else {
+				textNode.text(textarea.value);
+			}
+
 			// console.log("removing text area");
 			removeTextarea();
 		}
@@ -230,7 +226,7 @@ function start(stageJSON) {
 
 	var isPaint = false;
 	var lastLine;
-	var actionHistory = [];
+
 	stage.on("dragmove", (e) => {
 		if (isPaint) {
 			stage.stopDrag();
@@ -266,16 +262,17 @@ function start(stageJSON) {
 					img.style.width = width + "px";
 					img.style.height = height + "px";
 					tr.nodes([img2]);
-					actionHistory.push(img2);
+					//actionHistory.push(img2);
 				};
 				img.src = event.target.result;
+				clicked = img;
 			};
 			reader.readAsDataURL(blob);
 		} else if (item.kind == "string") {
 			navigator.clipboard
 				.readText()
 				.then((text) => {
-					var text = new Konva.Text({
+					var textNode = new Konva.Text({
 						x:
 							stage.getRelativePointerPosition().x -
 							ctx.measureText(text).width,
@@ -286,23 +283,24 @@ function start(stageJSON) {
 						fill: color,
 						draggable: true,
 					});
-					text.on("transform", function () {
+					textNode.on("transform", function () {
 						// reset scale, so only with is changing by transformer
-						text.setAttrs({
-							width: text.width() * text.scaleX(),
+						textNode.setAttrs({
+							width: textNode.width() * textNode.scaleX(),
 							scaleX: 1,
 						});
 					});
-
-					layer.add(text);
-					text.on("dblclick dbltap", textUpdate);
-					tr.nodes([text]);
+					layer.add(textNode);
+					textNode.on("dblclick dbltap", textUpdate);
+					tr.nodes([textNode]);
 					tr.enabledAnchors(["middle-left", "middle-right"]);
+
 					tr.boundBoxFunc(function (oldBox, newBox) {
 						newBox.width = Math.max(30, newBox.width);
 						return newBox;
 					});
-					actionHistory.push(text);
+					clicked = textNode;
+					//actionHistory.push(text);
 				})
 				.catch((err) => {
 					console.error("Failed to read clipboard contents: ", err);
@@ -324,7 +322,6 @@ function start(stageJSON) {
 
 	stage.on("mousedown touchstart", function (e) {
 		if (mode === "brush" || mode == "line") {
-			// || mode === "eraser"
 			stage.stopDrag();
 			isPaint = true;
 			var pos = {};
@@ -343,7 +340,6 @@ function start(stageJSON) {
 			});
 			layer.add(lastLine);
 		} else if (mode == "text") {
-			// mode == "text"
 			defaultText = "";
 			var text = new Konva.Text({
 				x:
@@ -356,6 +352,23 @@ function start(stageJSON) {
 				fill: color,
 				draggable: true,
 				width: defaultWidth,
+			});
+			text.on("transformend", function () {
+				console.log(
+					"transform end - before reset font size = " +
+						this.fontSize() +
+						" at scale " +
+						this.scaleX()
+				);
+				this.fontSize(this.fontSize() * this.scaleX());
+				this.scale({ x: 1, y: 1 });
+				layer.batchDraw();
+				console.log(
+					"transform end - after reset font size = " +
+						this.fontSize() +
+						" at scale " +
+						this.scaleX()
+				);
 			});
 			layer.add(text);
 			text.on("dblclick dbltap", textUpdate);
@@ -374,8 +387,8 @@ function start(stageJSON) {
 			pos.y = stage.getRelativePointerPosition().y;
 			var newPoints = lastLine.points().concat([pos.x, pos.y]);
 			lastLine.points(newPoints);
+			//actionHistory.push(lastLine);
 		}
-		actionHistory.push(lastLine);
 		// console.log(stage.getPosition().x + "," + stage.getPosition().y);
 	});
 
@@ -387,7 +400,6 @@ function start(stageJSON) {
 			return;
 		}
 		if (mode == "line") {
-			//mode == "line"
 			lastLine.points().pop();
 			lastLine.points().pop();
 			var pos = {};
@@ -416,6 +428,9 @@ function start(stageJSON) {
 
 	document.getElementById("size").addEventListener("input", (e) => {
 		size = document.getElementById("size").value;
+		try {
+			if (clicked.attrs.fontSize !== undefined) clicked.fontSize(size);
+		} catch (err) {} //null
 	});
 
 	var scaleBy = 1.1;
