@@ -1,6 +1,4 @@
-Clicking and writing text made easy: +
-    size issue (text size doesnt change ) + 
-    when change size the textbox becomes huge + 
+
 Make nodes draggable on hover
 fix difference btwn clicking and pasting text 
 Text size 
