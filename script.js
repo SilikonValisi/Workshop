@@ -258,6 +258,9 @@ function start(stageJSON) {
 						draggable: true,
 						id: "id" + new Date().getTime(),
 					});
+					img2.on("mouseover", function (e) {
+						tr.nodes([img2]);
+					});
 					layer.add(img2);
 					img.style.width = width + "px";
 					img.style.height = height + "px";
@@ -289,6 +292,9 @@ function start(stageJSON) {
 							width: textNode.width() * textNode.scaleX(),
 							scaleX: 1,
 						});
+					});
+					textNode.on("mouseover", function (e) {
+						tr.nodes([textNode]);
 					});
 					layer.add(textNode);
 					textNode.on("dblclick dbltap", textUpdate);

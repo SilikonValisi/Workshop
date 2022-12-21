@@ -1,8 +1,10 @@
 
-Make nodes draggable on hover
 fix difference btwn clicking and pasting text 
 Text size 
 
+zoom out text edit fixes: 
+    Text area size is different 
+    dbclick doesnt work
 
 
 
