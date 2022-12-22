@@ -1,7 +1,4 @@
-Paste in text area is bugged 
-
-make hover event global
-fix difference btwn clicking and pasting text 
+fix difference btwn clicking and pasting text ?? 
 Text size 
 
 zoom out text edit fixes: 

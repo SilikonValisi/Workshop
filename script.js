@@ -68,13 +68,14 @@ var textUpdate = function (eventElement) {
 	textarea.style.position = "absolute";
 	textarea.style.top = areaPosition.y + "px";
 	textarea.style.left = areaPosition.x + "px";
-	textarea.style.width = textNode.width() - textNode.padding() * 2 + "px";
+	textarea.style.width =
+		(textNode.width() - textNode.padding() * 2) * stage.scaleX() + "px";
 	if (textarea.style.width == "0px") {
 		textarea.style.width = defaultTextPx;
 	}
 	textarea.style.height =
 		textNode.height() - textNode.padding() * 2 + 5 + "px";
-	textarea.style.fontSize = textNode.fontSize() + "px";
+	textarea.style.fontSize = textNode.fontSize() * stage.scaleX() + "px";
 	textarea.style.border = "none";
 	textarea.style.padding = "0px";
 	textarea.style.margin = "0px";
@@ -103,7 +104,7 @@ var textUpdate = function (eventElement) {
 	textarea.style.transform = transform;
 
 	textarea.style.height = "auto";
-	textarea.style.height = textarea.scrollHeight + 3 + "px";
+	textarea.style.height = (textarea.scrollHeight + 3) * stage.scaleX() + "px";
 
 	textarea.focus();
 
@@ -265,6 +266,12 @@ function start(stageJSON) {
 					img2.on("mouseover", function (e) {
 						tr.nodes([img2]);
 					});
+					tr.enabledAnchors([
+						"top-left",
+						"top-right",
+						"bottom-left",
+						"bottom-right",
+					]);
 					layer.add(img2);
 					img.style.width = width + "px";
 					img.style.height = height + "px";
