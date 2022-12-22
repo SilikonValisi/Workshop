@@ -112,6 +112,9 @@ var textUpdate = function (eventElement) {
 		window.removeEventListener("click", handleOutsideClick);
 		textNode.show();
 		tr.show();
+		textNode.on("mouseover", function (e) {
+			tr.nodes([e.target]);
+		});
 		tr.forceUpdate();
 	}
 
@@ -170,6 +173,7 @@ var textUpdate = function (eventElement) {
 			removeTextarea();
 		}
 	}
+
 	setTimeout(() => {
 		window.addEventListener("click", handleOutsideClick);
 	});
@@ -271,7 +275,10 @@ function start(stageJSON) {
 				clicked = img;
 			};
 			reader.readAsDataURL(blob);
-		} else if (item.kind == "string") {
+		} else if (
+			item.kind == "string" &&
+			textarea !== document.activeElement
+		) {
 			navigator.clipboard
 				.readText()
 				.then((text) => {
@@ -293,12 +300,13 @@ function start(stageJSON) {
 							scaleX: 1,
 						});
 					});
+					tr.nodes([textNode]);
 					textNode.on("mouseover", function (e) {
-						tr.nodes([textNode]);
+						tr.nodes([e.target]);
 					});
 					layer.add(textNode);
 					textNode.on("dblclick dbltap", textUpdate);
-					tr.nodes([textNode]);
+
 					tr.enabledAnchors(["middle-left", "middle-right"]);
 
 					tr.boundBoxFunc(function (oldBox, newBox) {
@@ -347,7 +355,7 @@ function start(stageJSON) {
 			layer.add(lastLine);
 		} else if (mode == "text") {
 			defaultText = "";
-			var text = new Konva.Text({
+			var textNode = new Konva.Text({
 				x:
 					stage.getRelativePointerPosition().x -
 					ctx.measureText(defaultText).width,
@@ -359,29 +367,28 @@ function start(stageJSON) {
 				draggable: true,
 				width: defaultWidth,
 			});
-			text.on("transformend", function () {
-				console.log(
-					"transform end - before reset font size = " +
-						this.fontSize() +
-						" at scale " +
-						this.scaleX()
-				);
-				this.fontSize(this.fontSize() * this.scaleX());
-				this.scale({ x: 1, y: 1 });
-				layer.batchDraw();
-				console.log(
-					"transform end - after reset font size = " +
-						this.fontSize() +
-						" at scale " +
-						this.scaleX()
-				);
+			tr.enabledAnchors(["middle-left", "middle-right"]);
+
+			textNode.on("transform", function () {
+				textNode.setAttrs({
+					width: textNode.width() * textNode.scaleX(),
+					scaleX: 1,
+				});
 			});
-			layer.add(text);
-			text.on("dblclick dbltap", textUpdate);
+			tr.nodes([textNode]);
+			textNode.on("mouseover", function (e) {
+				tr.nodes([e.target]);
+			});
+			layer.add(textNode);
+
+			tr.boundBoxFunc(function (oldBox, newBox) {
+				newBox.width = Math.max(30, newBox.width);
+				return newBox;
+			});
+			textNode.on("dblclick dbltap", textUpdate);
 			setTimeout(() => {
-				text.fire("dblclick");
+				textNode.fire("dblclick");
 			}, 80); //idk why but less than 50 causes problem
-			tr.nodes([text]);
 		}
 	});
 
