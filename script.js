@@ -479,25 +479,37 @@ function start(stageJSON) {
 		};
 		stage.position(newPos);
 	});
+	function imagesToFolder() {
+		return new Promise((resolve, reject) => {
+			var zip = new JSZip();
 
-	var zip = new JSZip();
-	document.getElementById("save").addEventListener("click", function () {
-		var imgFolder = zip.folder("images");
-		var images = stage.find(".image");
+			var imgFolder = zip.folder("images");
+			var images = stage.find(".image");
 
-		for (i = 0; i < images.length; i++) {
-			let konvaImage = images[i];
-			var imageDownload = konvaImage.image();
-			ctx.drawImage(imageDownload, 0, 0);
-			canvas.toBlob(function (blob) {
-				imgFolder.file(konvaImage.id() + ".png", blob);
+			for (i = 0; i < images.length; i++) {
+				let konvaImage = images[i];
+				var imageDownload = konvaImage.image();
+				ctx.drawImage(imageDownload, 0, 0);
+
+				canvas.toBlob(function (blob) {
+					saveAs(blob, konvaImage.id() + ".png");
+				});
+				// const blob = await new Promise((resolve) =>
+				// 	canvas.toBlob(resolve)
+				// );
 				// saveAs(blob, konvaImage.id() + ".png");
+				// // imgFolder.file(konvaImage.id() + ".png", blob);
+			}
+			resolve(zip);
+		});
+	}
+	document.getElementById("save").addEventListener("click", function () {
+		imagesToFolder().then((zip) => {
+			zip.file("workshop.json", stage.toJSON());
+			zip.generateAsync({ type: "blob" }).then(function (content) {
+				// see FileSaver.js
+				saveAs(content, "example.zip");
 			});
-		}
-		zip.file("workshop.json", stage.toJSON());
-		zip.generateAsync({ type: "blob" }).then(function (content) {
-			// see FileSaver.js
-			saveAs(content, "example.zip");
 		});
 	});
 
