@@ -1,5 +1,5 @@
 var obj = null;
-var stage;
+var stage = null;
 var layer;
 var clicked = null;
 var zIndex = 1;
@@ -38,16 +38,65 @@ window.addEventListener("keyup", (e) => {
 		mode = "pointer";
 	}
 });
-function onChange(event) {
-	var reader = new FileReader();
-	reader.onload = onReaderLoad;
-	reader.readAsText(event.target.files[0]);
+function onChange(e) {
+	var file = (e.srcElement || e.target).files[0];
+	var jsZip = new JSZip();
+	JSZip.loadAsync(file)
+		.then(function (zip) {
+			stage = new Promise((resolve) => {
+				Object.keys(zip.files).forEach(function (filename) {
+					if (filename.endsWith("json")) {
+						zip.files[filename]
+							.async("string")
+							.then(function (fileData) {
+								obj = JSON.parse(fileData);
+								stage = start(obj);
+								resolve(stage);
+							});
+					}
+				});
+			});
+			var re = /(.jpg|.png|.gif|.ps|.jpeg)$/;
+			var promises = Object.keys(zip.files)
+				.filter(function (fileName) {
+					// don't consider non image files
+					return re.test(fileName.toLowerCase());
+				})
+				.map(function (fileName) {
+					var file = zip.files[fileName];
+					return file.async("blob").then(function (blob) {
+						return [
+							fileName, // keep the link between the file name and the content
+							URL.createObjectURL(blob), // create an url. img.src = URL.createObjectURL(...) will work
+						];
+					});
+				});
+			// `promises` is an array of promises, `Promise.all` transforms it
+			// into a promise of arrays
+			return Promise.all(promises);
+		})
+		.then(function (result) {
+			// we have here an array of [fileName, url]
+			// if you want the same result as imageSrc:
+			return result.reduce(function (acc, val) {
+				acc[val[0]] = val[1];
+				return acc;
+			}, {});
+		})
+		.then(function (imgData) {
+			var konvaImages = stage.find(".image");
+			konvaImages.forEach((konvaImage) => {
+				var imageObj = new Image();
+				imageObj.onload = function () {
+					konvaImage.image(imageObj);
+				};
+				imageObj.src = imgData[konvaImages[0].id() + ".png"];
+			});
+			console.log(stage);
+			console.log(imgData);
+		});
 }
 
-function onReaderLoad(event) {
-	obj = event.target.result;
-	start(obj);
-}
 document.getElementById("stageJsonFile").addEventListener("input", onChange);
 
 var textUpdate = function (eventElement) {
@@ -170,7 +219,6 @@ var textUpdate = function (eventElement) {
 				textNode.text(textarea.value);
 			}
 
-			// console.log("removing text area");
 			removeTextarea();
 		}
 	}
@@ -479,39 +527,34 @@ function start(stageJSON) {
 		};
 		stage.position(newPos);
 	});
-	function imagesToFolder() {
-		return new Promise((resolve, reject) => {
+
+	document
+		.getElementById("save")
+		.addEventListener("click", async function () {
 			var zip = new JSZip();
 
-			var imgFolder = zip.folder("images");
+			// var imgFolder = zip.folder("images");
 			var images = stage.find(".image");
 
 			for (i = 0; i < images.length; i++) {
 				let konvaImage = images[i];
 				var imageDownload = konvaImage.image();
+				canvas.width = imageDownload.width;
+				canvas.height = imageDownload.height;
 				ctx.drawImage(imageDownload, 0, 0);
 
-				canvas.toBlob(function (blob) {
-					saveAs(blob, konvaImage.id() + ".png");
-				});
-				// const blob = await new Promise((resolve) =>
-				// 	canvas.toBlob(resolve)
-				// );
-				// saveAs(blob, konvaImage.id() + ".png");
-				// // imgFolder.file(konvaImage.id() + ".png", blob);
+				const blob = await new Promise((resolve) =>
+					canvas.toBlob(resolve)
+				);
+				zip.file(konvaImage.id() + ".png", blob); //imgFolder
 			}
-			resolve(zip);
-		});
-	}
-	document.getElementById("save").addEventListener("click", function () {
-		imagesToFolder().then((zip) => {
+
 			zip.file("workshop.json", stage.toJSON());
 			zip.generateAsync({ type: "blob" }).then(function (content) {
 				// see FileSaver.js
 				saveAs(content, "example.zip");
 			});
 		});
-	});
 
 	function downloadURI(uri, name) {
 		var link = document.createElement("a");
@@ -536,6 +579,7 @@ function start(stageJSON) {
 		},
 		false
 	);
+	return stage;
 }
 
 function createBackgroundRect() {

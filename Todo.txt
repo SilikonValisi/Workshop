@@ -1,21 +1,41 @@
-fix difference btwn clicking and pasting text ?? 
-Text size 
+Save and continue:DONE 
 
-zoom out text edit fixes: 
-    Text area size is different 
-    dbclick doesnt work
+Host it at a website
 
 
 
-Action history size limit
-Text appeared in the wrong place ? 
-putting one into onother and pop 
-Erasing for SOLT 
-
-remove duplicate image names 
 
 
-NOTES: maybe change to change mode with keys 
-alt = text 
-shift = line 
+
+
+
+
+
+
+
+
+
+
+
+DEFECTS: 
+    fix difference btwn clicking and pasting text ?? 
+    Text size 
+
+    zoom out text edit fixes: 
+        Text area size is different 
+        dbclick doesnt work
+
+
+
+    Action history size limit
+    Text appeared in the wrong place ? 
+    putting one into onother and pop 
+    Erasing for SOLT 
+
+    remove duplicate image names 
+
+
+    NOTES: maybe change to change mode with keys 
+    alt = text 
+    shift = line 
 
